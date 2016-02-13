@@ -8,20 +8,10 @@ module Vagrant
     class Watcher
       include Vagrant::Action::Builtin::MixinSyncedFolders
 
-      # TODO
-      def log(message)
-        puts "#{message}"
-        # File.open("/tmp/vagrant-notify.log", 'a+') do |log|
-        #   log.puts "#{message}"
-        # end
-      end
-
       def self.run(env)
-
         watcher = self.new(env)
         watcher.log
         watcher.run
-
       end
 
       def initialize(env)
@@ -94,13 +84,11 @@ module Vagrant
 
       def send_message(msg, retries = 3)
         begin
-          puts "writing #{@ip}, #{@port}, #{msg}"
           Socket.tcp(@ip, @port) {|sock|
             sock.puts msg
             sock.close_write
           }
         rescue => a
-          puts "ERROR!!! #{a}"
           sleep 0.1
           send_message(msg, retries - 1) if (retries > 0)
         end
