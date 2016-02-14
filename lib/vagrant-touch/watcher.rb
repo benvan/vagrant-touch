@@ -1,7 +1,10 @@
 require "vagrant/action/builtin/mixin_synced_folders"
+
 require 'socket'
 require 'byebug'
 require 'listen'
+
+require_relative 'folder_watcher'
 
 module Vagrant
   module Touch
@@ -38,8 +41,13 @@ module Vagrant
         if pid.nil? then
           $0 = "vagrant-touch-daemon"
 
-          listeners = @folder_mappings.map{ |s,ts| create_listener(s,ts) }
-          listeners.each( &:start )
+          FolderWatcher.adapt.tap do |fw|
+            @folder_mappings.each do |s,ts|
+              fw.watch(s) do |d|
+                send_message(ts.join("\n"))
+              end
+            end
+          end.start
 
           sleep
 
@@ -67,18 +75,6 @@ module Vagrant
           @logger.detail(" - folders:  #{str}")
         end
 
-
-      end
-
-      def create_listener(source, targets)
-        Listen.to(source) do |modified, added, removed|
-          args = targets.join("\n")
-          send_message( targets.join("\n") )
-        end
-      end
-
-
-      def get_source_folders(files)
 
       end
 
